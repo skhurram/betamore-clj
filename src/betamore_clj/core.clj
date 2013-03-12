@@ -22,7 +22,7 @@
 
 ;;Document Jsoup/parse(String html)
 (defn parse
-  ([] (parse start))
+  ([] (parse (slurp start)))
   ([source] (Jsoup/parse source)))
 
 ;;(links (parse))
@@ -155,7 +155,7 @@
 (defn go-concurrent
   "Uses agents as workers, depleting a queue to task them.  Blocks until they're all done."
   [n-workers]
-  (let [limit 1000
+  (let [limit 100
         total-count (atom 0)
         [q enqueue eoq] (pipe)
         workers (cycle (take n-workers (repeatedly #(agent nil))))
@@ -165,12 +165,13 @@
     (loop [workers workers
            q q]
       (if (< @total-count limit)
-        (when-let [[q1] (seq q)]
+        (let [q1 (first q)
+              more (rest q)]
           (if-not (@seen-urls q1)
             (do (do-concurrent (first workers) q1 enqueue completed-count)
                 (swap! seen-urls conj q1)
                 (swap! total-count inc)
-                (recur (next workers) (next q)))
-            (recur workers (next q))))))
+                (recur (next workers) more))
+            (recur workers more)))))
     (poll-test #(>= @completed-count limit) 10 60000)
     (println "Completed" @completed-count)))
