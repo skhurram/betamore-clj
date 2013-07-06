@@ -6,3 +6,6 @@ betamore-clj
 ============
 
 Any clojure materials I use for betamore.
+
+
+Crawl a website e.g. wikipedia
